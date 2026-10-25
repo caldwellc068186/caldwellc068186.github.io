@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Android 固件与系统镜像安全分析方法：提取、审计与漏洞复现 · 安卓漏洞与安全防护研究</title>
+<meta name="description" content="Android 固件与系统镜像安全分析方法：提取、审计与漏洞复现 —— 技术研究报告 · 面向自有或已获授权设备与公开固件的安全研究工作流">
+<link rel="canonical" href="https://caldwellc068186.github.io/android-firmware-image-security-analysis.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="安卓漏洞与安全防护研究">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="Android 固件与系统镜像安全分析方法：提取、审计与漏洞复现">
+<meta property="og:description" content="Android 固件与系统镜像安全分析方法：提取、审计与漏洞复现 —— 技术研究报告 · 面向自有或已获授权设备与公开固件的安全研究工作流">
+<meta property="og:url" content="https://caldwellc068186.github.io/android-firmware-image-security-analysis.html">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://caldwellc068186.github.io/android-firmware-image-security-analysis.html"},"headline":"Android 固件与系统镜像安全分析方法：提取、审计与漏洞复现","description":"Android 固件与系统镜像安全分析方法：提取、审计与漏洞复现 —— 技术研究报告 · 面向自有或已获授权设备与公开固件的安全研究工作流","inLanguage":"zh-CN","datePublished":"2026-10-26","dateModified":"2026-10-25","url":"https://caldwellc068186.github.io/android-firmware-image-security-analysis.html","publisher":{"@type":"Organization","name":"安卓漏洞与安全防护研究","url":"https://caldwellc068186.github.io/"},"isPartOf":{"@type":"WebSite","name":"安卓漏洞与安全防护研究","url":"https://caldwellc068186.github.io/"}}
+</script>
+<style>
+:root{--fg:#1b1f24;--mut:#57606a;--line:#d8dee4;--bg:#fff;--acc:#0a66c2;--code:#f6f8fa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif}
+header.site{border-bottom:1px solid var(--line);padding:14px 20px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+header.site .brand{font-weight:700;color:var(--fg);text-decoration:none;font-size:17px}
+header.site .tag{color:var(--mut);font-size:13px}
+main{max-width:46rem;margin:0 auto;padding:28px 20px 56px}
+h1{font-size:1.85rem;line-height:1.35;margin:.2em 0 .3em}
+h2{font-size:1.32rem;margin:2.1em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.7em 0 .5em}
+h4{font-size:1rem;margin:1.4em 0 .4em}
+.subtitle{color:var(--mut);font-size:1.02rem;margin:0 0 1.2em}
+p{margin:.9em 0}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+code{background:var(--code);padding:.15em .35em;border-radius:4px;font:.87em/1.6 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+blockquote{margin:1em 0;padding:.4em 1em;border-left:4px solid var(--line);color:var(--mut);background:#fafbfc}
+hr{border:0;border-top:1px solid var(--line);margin:2.2em 0}
+ul,ol{padding-left:1.5em}li{margin:.4em 0}
+table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#fbfcfd}
+nav.toc{border:1px solid var(--line);border-radius:8px;padding:12px 18px;margin:1.4em 0;background:#fbfcfd}
+nav.toc p{font-weight:600;margin:0 0 .4em}
+nav.toc ul{margin:0;padding-left:1.1em;list-style:none}
+nav.toc li.t{font-weight:600;margin:.5em 0 .2em}
+nav.toc li.s{margin:.2em 0 .2em .8em}
+footer.site{border-top:1px solid var(--line);padding:20px;color:var(--mut);font-size:14px;max-width:49rem;margin:0 auto}
+ul.artlist{list-style:none;padding:0}ul.artlist li{margin:0 0 1.6em}
+ul.artlist .t{font-size:1.08rem;font-weight:600;display:block}
+ul.artlist .s{color:var(--mut);font-size:.94rem;display:block;margin-top:.15em}
+@media(max-width:600px){main{padding:20px 14px 44px}h1{font-size:1.5rem}table{font-size:.86em}}
+</style>
+<!-- GOOGLE-SITE-VERIFICATION: 把 GSC 给的 <meta name="google-site-verification" ...> 插到这一行下面 -->
+</head>
+<body>
+<header class="site"><a class="brand" href="./">安卓漏洞与安全防护研究</a><span class="tag">Android 安全研究笔记</span></header>
+<main>
+<article>
+<h1>Android 固件与系统镜像安全分析方法：提取、审计与漏洞复现</h1>
+<p class="subtitle">技术研究报告 · 面向自有或已获授权设备与公开固件的安全研究工作流</p>
+<nav class="toc" aria-label="目录"><p>目录</p><ul><li class="t"><a href="#sec-1">摘要</a></li><li class="t"><a href="#sec-2">一、为什么固件层值得单独研究</a></li><li class="t"><a href="#sec-3">二、研究物料与工具清单</a></li><li class="t"><a href="#sec-4">三、提取与解包：从更新包到可读文件树</a></li><li class="t"><a href="#sec-5">四、审计定位：把攻击面落到可调用入口</a></li><li class="t"><a href="#sec-6">五、静态深入：HAL、内核模块与特权应用</a></li><li class="t"><a href="#sec-7">六、动态验证与最小化复现</a></li><li class="t"><a href="#sec-8">七、报告与协调披露</a></li><li class="t"><a href="#sec-9">八、面向厂商与集成团队的收敛建议</a></li><li class="t"><a href="#sec-10">九、结语</a></li><li class="t"><a href="#sec-11">联系方式</a></li></ul></nav>
+<h2 id="sec-1">摘要</h2>
+<p>Android 设备的安全边界并不止于操作系统框架层。设备厂商在 AOSP 之上叠加的定制分区、硬件抽象层（HAL）、闭源驱动与基带固件，共同构成了实际运行在用户手中的系统，也构成了与 AOSP 明显不同的攻击面。同一版本的 Android 在不同机型上可能存在完全不同的缺陷，这正是固件层安全研究的价值所在。本文梳理一条可复现的固件安全分析工作流：在授权范围内使用合法获取的固件，完成镜像提取与分区解包，将攻击面映射到可调用入口，再在隔离实验环境中做最小化动态验证，最后按协调披露流程形成可修复的报告。文末面向设备厂商与集成团队给出工程侧的收敛建议。</p>
+<p><strong>关键词</strong>：Android 固件安全；系统镜像分析；super.img；AVB 验证链；vendor HAL；SELinux 策略；漏洞复现；协调披露</p>
+<h2 id="sec-2">一、为什么固件层值得单独研究</h2>
+<p>AOSP 的安全公告按月发布，但设备真正收到的补丁取决于厂商的集成节奏。用户在&quot;Android 版本&quot;之外能看到的&quot;安全补丁级别&quot;，反映的正是这段滞后。滞后期内，框架层漏洞是否可被利用往往还取决于厂商的定制实现，而定制层本身还带来新的缺陷来源：</p>
+<ul>
+<li><strong>厂商自定义系统服务与 HAL</strong>：这些实现通常不在公开代码仓库中，缺少社区审计，输入校验和权限判断最容易出问题。</li>
+<li><strong>内核与驱动</strong>：厂商为摄像头、显示、音频、传感器等增加的驱动代码，多数使用 C/C++ 实现，是内存安全缺陷的高发区。</li>
+<li><strong>特权应用</strong>：以 <code>signature|privileged</code> 权限运行的预装应用，可以触达普通应用无法访问的系统接口，其导出组件与参数处理逻辑等价于系统层的入口。</li>
+<li><strong>基带、安全处理器与其他协处理器固件</strong>：独立于主处理器的执行域，一旦存在缺陷，影响面与主系统隔离策略同时失效。</li>
+</ul>
+<p>因此，固件分析不是为了重复框架层的研究，而是为了回答一个更具体的问题：<strong>在我手上这台设备里，框架层的防护被厂商实现削弱了没有，以及厂商自己引入了什么。</strong></p>
+<p>需要强调的边界：本文讨论的方法只适用于自己拥有或已获得书面测试授权的设备，以及厂商公开发布的固件包。分析结果用于报告与修复，不用于访问他人设备或数据。</p>
+<h2 id="sec-3">二、研究物料与工具清单</h2>
+<table><thead><tr><th>物料</th><th>说明</th><th>常用工具</th></tr></thead><tbody><tr><td>OTA 全量/增量包</td><td>官方更新包，含 <code>payload.bin</code></td><td><code>payload_dumper</code>、厂商解包脚本</td></tr><tr><td>分区镜像</td><td><code>system.img</code>、<code>vendor.img</code>、<code>super.img</code>、<code>boot.img</code>、<code>vbmeta.img</code>、<code>dtbo.img</code>、<code>recovery.img</code></td><td><code>simg2img</code>、<code>lpunpack</code>、<code>unpack_bootimg</code></td></tr><tr><td>动态分区元数据</td><td><code>super</code> 逻辑分区布局与 A/B 槽位</td><td><code>lpdump</code>、<code>fastboot create-super</code></td></tr><tr><td>验证元数据</td><td>AVB 签名描述符、滚动版本</td><td><code>avbtool info</code></td></tr><tr><td>文件系统</td><td>ext4 与 EROFS 两种常见布局</td><td><code>debugfs</code>、<code>fsck.erofs</code>、<code>extract_erofs</code></td></tr><tr><td>设备运行时</td><td>服务列表、SELinux 上下文、属性</td><td><code>adb shell</code>、<code>service list</code>、<code>dumpsys</code>、<code>getprop</code></td></tr><tr><td>策略与接口清单</td><td>sepolicy、VINTF manifest</td><td><code>sesearch</code>、<code>sepolicy-analyze</code>、<code>vintf</code> 相关命令</td></tr><tr><td>二进制分析</td><td>HAL 与服务实现、系统应用</td><td>Ghidra、IDA、jadx、apktool</td></tr><tr><td>动态观测</td><td>系统调用、崩溃现场、时序</td><td><code>strace</code>、<code>logcat</code>、tombstone、Perfetto</td></tr></tbody></table>
+<p>物料管理本身是研究质量的一部分：每个镜像记录下载来源、SHA-256、构建指纹（<code>ro.build.fingerprint</code>）与补丁级别，否则复现结论无法对齐到具体版本。</p>
+<h2 id="sec-4">三、提取与解包：从更新包到可读文件树</h2>
+<p><strong>第一步是把压缩与分块层次剥开。</strong> 稀疏格式（sparse image）需要先转换成原始镜像，否则文件系统工具无法直接读取。<code>super.img</code> 承载动态分区，实际包含 <code>system</code>、<code>vendor</code>、<code>product</code>、<code>system_ext</code>、<code>odm</code>、<code>vendor_boot</code> 等多个逻辑分区，需要用逻辑分区工具按布局拆出每个分区，而不是整体挂载。带虚拟 A/B 压缩（VABC）的更新包还要先解出 C 合并时展开的数据块，才能还原目标分区内容。</p>
+<p><strong>第二步是启动镜像与内核。</strong> 老格式的 <code>boot.img</code> 包含内核、ramdisk 与二级页表；采用通用内核镜像（GKI）的设备把核心内核与厂商模块拆开，需要分别取 <code>boot.img</code> 与 <code>vendor_boot.img</code>，其中 <code>vendor_boot</code> 里通常带有厂商的 <code>lt-dtbo</code>、DTB 与 ramdisk。解包后用 CPIO 归档工具还原 ramdisk，检查 <code>init</code> 脚本与 <code>*.rc</code> 中由属性触发的服务：这些服务往往以高权限启动，且读取外部可控属性，是入口枚举的重点。</p>
+<p><strong>第三步是文件系统读取。</strong> 无论 ext4 还是 EROFS，都应以只读方式提取内容，避免修改访问时间或元数据破坏可复现性。提取后先做目录级差异比较：与同族机型的固件对比、与上一版本对比。跨机型差异通常指向厂商定制代码，跨版本差异通常指向补丁改动——后者甚至能反向定位未被公开描述的修复点，是研究的高价值线索。</p>
+<p><strong>关于验证链的现实约束。</strong> Android Verified Boot（AVB）对关键分区做哈希树签名，<code>vbmeta.img</code> 汇集各分区描述符与滚动版本号。这意味着研究时不能假设&quot;改了 <code>system</code> 还能正常启动&quot;：修改分区而不更新 <code>vbmeta</code>，设备会验证失败或降级；关闭验证通常要求解锁 bootloader，而解锁本身会触发厂商的数据擦除与安全状态变化，某些机型解锁后还会主动削弱或改变被测配置。因此固件静态分析与设备动态验证要分开规划：静态分析在离线镜像上完成，动态验证在明确接受解锁副作用的实验机上进行，并在报告中说明实验条件是否影响结论适用范围。</p>
+<h2 id="sec-5">四、审计定位：把攻击面落到可调用入口</h2>
+<p>拿到文件树只是起点，真正的工作是把&quot;哪些代码接收跨信任边界的数据&quot;列成清单。可行的枚举路径：</p>
+<ol>
+<li><strong>接口清单</strong>。VINTF manifest 声明了设备提供的 HAL 版本与接口；framework 侧的 <code>service list</code> / <code>dumpsys -l</code> 给出运行期服务。两者交叉可以识别厂商私加的接口与只在特定机型上出现的服务。</li>
+<li><strong>权限边界</strong>。用 sepolicy 分析工具反查：哪些域可以调用该服务，哪些标签被允许执行敏感操作，是否存在宽泛的 <code>allow</code> 规则或例外宏。策略宽松往往等价于漏洞可达性提升。</li>
+<li><strong>入口点</strong>。SELinux 上下文里的设备节点、<code>/proc</code> 与 <code>/sys</code> 接口、属性前缀、广播与 <code>ContentProvider</code>，每一个都是外部可控数据的入口。对每个入口记录调用方权限要求。</li>
+<li><strong>可达性判断</strong>。导出组件是否要求系统权限，服务方法是否校验调用方 UID/包名，Binder 参数是否校验类型与长度，驱动 <code>ioctl</code> 是否校验用户指针范围与结构体版本字段。缺校验的入口优先深入。</li>
+<li><strong>根因归类</strong>。把可疑点归入既有缺陷类别（越界读写、释放后使用、整数溢出、竞态条件、类型混淆、权限检查缺失、路径遍历、签名校验绕过等），并记录可获得的利用能力：信息读取、任意写、代码执行或持久化。归类后再看平台已有的缓解机制是否压制。</li>
+</ol>
+<p>这套方法的价值在于可迁移：同一份清单可以逐版本重跑，用差异驱动增量审计，而不是每次从零开始通读代码。</p>
+<h2 id="sec-6">五、静态深入：HAL、内核模块与特权应用</h2>
+<p><strong>vendor HAL</strong> 是固件审计中性价比最高的目标。它们直接接收来自 framework 或应用侧触发的数据，常用 C++ 手写序列化逻辑，且往往缺少框架层的统一防护约定。审计时重点看边界处：参数尺寸换算、共享内存与 <code>fidl</code>/<code>parcel</code> 句柄生命周期、异步回调的引用计数。AOSP 为部分 HAL 提供了模糊测试桩，厂商实现应当纳入同样的测试覆盖；如果目标固件中没有对应测试件，这本身就是可以反馈给厂商的改进项。</p>
+<p><strong>内核与厂商模块</strong>的审计依赖设备树与模块列表：确认哪些模块可被非特权进程打开，哪些 <code>ioctl</code> 命令号缺少最小权限检查。具备条件时应使用带检测机制的内核构建（例如开启 KASAN 或硬件内存标签的调试镜像）复现越界访问，因为生产镜像上的症状常常只是&quot;服务重启&quot;，检测构建能把症状变成可定位的报告。</p>
+<p><strong>特权预装应用</strong>常被忽略。它们运行在同一份 ART 上，却持有普通应用没有的权限。用反编译工具提取后，重点不是业务逻辑，而是导出的 <code>Activity</code>/<code>Service</code>/<code>Receiver</code>/<code>Provider</code>、隐式 Intent 的处理、以外部输入拼接的 <code>PendingIntent</code>、以及把外部数据转交给系统服务的桥接路径。这类缺陷通常不需要内存破坏即可获得权限提升效果。</p>
+<h2 id="sec-7">六、动态验证与最小化复现</h2>
+<p>动态验证的目标是证明影响，不是制造破坏。工程上建议遵守几条纪律：</p>
+<ul>
+<li><strong>隔离环境</strong>：实验设备关闭蜂窝与共享，接入隔离网段，不登录个人账号，不放入真实凭据与生产数据。</li>
+<li><strong>可回滚</strong>：每次验证前保存分区快照与构建指纹，出问题能还原，也保证结论对应明确版本。</li>
+<li><strong>最小可行性验证</strong>：优先构造能证明能力的证据，例如读取一个只有系统权限才能读的属性、向自身进程的可控内存写入模式，而不是追求完整利用链。报告里说明&quot;能达到的最坏影响&quot;与&quot;验证到的程度&quot;之间的差别，是最诚实也最专业表达方式。</li>
+<li><strong>观测优先</strong>：<code>logcat</code>、tombstone、<code>dmesg</code>、系统调用跟踪四件套足以覆盖多数场景。竞态与状态相关缺陷需要重复触发与时序放大，把复现概率量化写进报告，便于厂商评估修复优先级。</li>
+<li><strong>不要在生产配置上测破坏性用例</strong>：会触发重启或数据丢失的验证应在实验机上进行，并预先告知可能的后果。</li>
+</ul>
+<h2 id="sec-8">七、报告与协调披露</h2>
+<p>一份可被厂商直接用于修复的报告通常包含：</p>
+<ol>
+<li><strong>环境与版本</strong>：机型、构建指纹、安全补丁级别、是否解锁、实验条件差异。</li>
+<li><strong>影响描述</strong>：触发该缺陷的权限前提，可达路径，能造成的最坏后果，是否需要用户交互。</li>
+<li><strong>复现步骤</strong>：从干净状态开始、可重复执行的步骤，附关键日志片段。</li>
+<li><strong>定位线索</strong>：涉及的分区、进程、接口与代码位置（在闭源组件上，至少给出符号地址与函数特征）。</li>
+<li><strong>缓解与修复建议</strong>：输入校验点、权限检查补充、是否需要收紧 SELinux 策略或禁用调试接口。</li>
+</ol>
+<p>披露节奏上，通过厂商安全应急响应团队或平台方既有漏洞提交渠道报告，遵循协调披露的时间约定（通常以补丁可用为公开前提，公开细节推迟到修复分发后）。在补丁落地之前，不发布可直接用于攻击的利用代码、不提前公开完整技术细节，也不在设备上验证与缺陷无关的访问能力。</p>
+<h2 id="sec-9">八、面向厂商与集成团队的收敛建议</h2>
+<p>固件层风险的治理，可以按下列优先级推进：</p>
+<ul>
+<li><strong>缩短补丁滞后</strong>：把&quot;安全补丁级别&quot;作为发布门禁指标，对超期未合入月度补丁的机型给出明确说明与支持终止日期。</li>
+<li><strong>保持镜像一致性</strong>：确保出厂镜像与更新包同源可校验，记录每次发布的构建指纹与镜像哈希，便于第三方核对与分析。</li>
+<li><strong>给定制代码补测试</strong>：把厂商 HAL 与服务纳入模糊测试与静态分析流程，沿用平台已有的测试桩与加固编译选项（栈保护、<code>_FORTIFY</code>、位置无关代码、控制流完整性，以及 arm64 的指针认证与分支目标识别）。</li>
+<li><strong>收紧权限面</strong>：审查 sepolicy 中的宽泛规则与例外；特权预装应用只声明必要权限，导出组件默认不导出，跨进程调用校验调用方身份。</li>
+<li><strong>关闭生产调试通道</strong>：默认不启用高速调试接口与非必要属性写入路径；解锁策略与验证链降级行为对用户透明可见。</li>
+<li><strong>把研究者的产出变成流程</strong>：建立对外报告入口、复现验证与反馈闭环。固件层缺陷大多来自少量重复模式，一次系统性整改的收益远高于逐条修补。</li>
+</ul>
+<h2 id="sec-10">九、结语</h2>
+<p>Android 的实际攻击面由厂商定制决定，固件与系统镜像分析把研究视角从&quot;平台公告&quot;拉回到&quot;手上这台设备&quot;。合法取得固件、以只读方式解包、用清单驱动审计、在隔离环境做最小化验证、按协调披露交付可修复的报告——这条工作流并不依赖秘密手段，依赖的是版本记录、入口枚举和可复现性这些枯燥却决定结论质量的细节。对研究者而言，它是把发现转化为防护改进的路径；对厂商而言，它应当成为内部质量流程的一部分，在外部报告到达之前完成同样的检查。</p>
+<hr>
+<h2 id="sec-11">联系方式</h2>
+<p>咨询 iOS、安卓系统安全相关问题，请联系 Telegram：<a href="https://t">https://t</a>.me/one00190</p>
+</article>
+</main>
+<footer class="site">本站为技术研究与防护实践笔记，全部方法仅用于自有或已获授权的设备与环境。咨询 iOS、安卓系统安全相关问题，请联系 Telegram：<a href="https://t.me/one00190">https://t.me/one00190</a></footer>
+</body>
+</html>

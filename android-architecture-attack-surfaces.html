@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Android 系统架构与主要攻击面 · 安卓漏洞与安全防护研究</title>
+<meta name="description" content="Android 系统架构与主要攻击面 —— Android 是一种基于 Linux 内核构建的开源移动操作系统，采用分层架构设计，为应用程序提供运行环境、硬件访问能力和系统服务。其安全性不仅取决于单个组件的实现，还与各层之间的通信机制、权限控制和安全边界密切相关。">
+<link rel="canonical" href="https://caldwellc068186.github.io/android-architecture-attack-surfaces.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="安卓漏洞与安全防护研究">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="Android 系统架构与主要攻击面">
+<meta property="og:description" content="Android 系统架构与主要攻击面 —— Android 是一种基于 Linux 内核构建的开源移动操作系统，采用分层架构设计，为应用程序提供运行环境、硬件访问能力和系统服务。其安全性不仅取决于单个组件的实现，还与各层之间的通信机制、权限控制和安全边界密切相关。">
+<meta property="og:url" content="https://caldwellc068186.github.io/android-architecture-attack-surfaces.html">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://caldwellc068186.github.io/android-architecture-attack-surfaces.html"},"headline":"Android 系统架构与主要攻击面","description":"Android 系统架构与主要攻击面 —— Android 是一种基于 Linux 内核构建的开源移动操作系统，采用分层架构设计，为应用程序提供运行环境、硬件访问能力和系统服务。其安全性不仅取决于单个组件的实现，还与各层之间的通信机制、权限控制和安全边界密切相关。","inLanguage":"zh-CN","datePublished":"2026-10-26","dateModified":"2026-10-24","url":"https://caldwellc068186.github.io/android-architecture-attack-surfaces.html","publisher":{"@type":"Organization","name":"安卓漏洞与安全防护研究","url":"https://caldwellc068186.github.io/"},"isPartOf":{"@type":"WebSite","name":"安卓漏洞与安全防护研究","url":"https://caldwellc068186.github.io/"}}
+</script>
+<style>
+:root{--fg:#1b1f24;--mut:#57606a;--line:#d8dee4;--bg:#fff;--acc:#0a66c2;--code:#f6f8fa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif}
+header.site{border-bottom:1px solid var(--line);padding:14px 20px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+header.site .brand{font-weight:700;color:var(--fg);text-decoration:none;font-size:17px}
+header.site .tag{color:var(--mut);font-size:13px}
+main{max-width:46rem;margin:0 auto;padding:28px 20px 56px}
+h1{font-size:1.85rem;line-height:1.35;margin:.2em 0 .3em}
+h2{font-size:1.32rem;margin:2.1em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.7em 0 .5em}
+h4{font-size:1rem;margin:1.4em 0 .4em}
+.subtitle{color:var(--mut);font-size:1.02rem;margin:0 0 1.2em}
+p{margin:.9em 0}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+code{background:var(--code);padding:.15em .35em;border-radius:4px;font:.87em/1.6 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+blockquote{margin:1em 0;padding:.4em 1em;border-left:4px solid var(--line);color:var(--mut);background:#fafbfc}
+hr{border:0;border-top:1px solid var(--line);margin:2.2em 0}
+ul,ol{padding-left:1.5em}li{margin:.4em 0}
+table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#fbfcfd}
+nav.toc{border:1px solid var(--line);border-radius:8px;padding:12px 18px;margin:1.4em 0;background:#fbfcfd}
+nav.toc p{font-weight:600;margin:0 0 .4em}
+nav.toc ul{margin:0;padding-left:1.1em;list-style:none}
+nav.toc li.t{font-weight:600;margin:.5em 0 .2em}
+nav.toc li.s{margin:.2em 0 .2em .8em}
+footer.site{border-top:1px solid var(--line);padding:20px;color:var(--mut);font-size:14px;max-width:49rem;margin:0 auto}
+ul.artlist{list-style:none;padding:0}ul.artlist li{margin:0 0 1.6em}
+ul.artlist .t{font-size:1.08rem;font-weight:600;display:block}
+ul.artlist .s{color:var(--mut);font-size:.94rem;display:block;margin-top:.15em}
+@media(max-width:600px){main{padding:20px 14px 44px}h1{font-size:1.5rem}table{font-size:.86em}}
+</style>
+<!-- GOOGLE-SITE-VERIFICATION: 把 GSC 给的 <meta name="google-site-verification" ...> 插到这一行下面 -->
+</head>
+<body>
+<header class="site"><a class="brand" href="./">安卓漏洞与安全防护研究</a><span class="tag">Android 安全研究笔记</span></header>
+<main>
+<article>
+<h1>Android 系统架构与主要攻击面</h1>
+<nav class="toc" aria-label="目录"><p>目录</p><ul><li class="t"><a href="#sec-1">一、Android 系统整体架构</a></li><li class="s"><a href="#sec-1-1">1.1 应用层</a></li><li class="s"><a href="#sec-1-2">1.2 应用框架层</a></li><li class="s"><a href="#sec-1-3">1.3 Android Runtime 与原生组件</a></li><li class="s"><a href="#sec-1-4">1.4 硬件抽象层（HAL）</a></li><li class="s"><a href="#sec-1-5">1.5 Linux 内核层</a></li><li class="t"><a href="#sec-2">二、Android 系统主要攻击面分析</a></li><li class="t"><a href="#sec-3">三、Android 中典型的安全边界</a></li><li class="t"><a href="#sec-4">四、Android 攻击面与漏洞类型之间的关系</a></li><li class="t"><a href="#sec-5">五、Android 系统攻击面评估方法</a></li><li class="t"><a href="#sec-6">六、总结</a></li><li class="t"><a href="#sec-7">联系方式</a></li></ul></nav>
+<p>Android 是一种基于 Linux 内核构建的开源移动操作系统，采用分层架构设计，为应用程序提供运行环境、硬件访问能力和系统服务。其安全性不仅取决于单个组件的实现，还与各层之间的通信机制、权限控制和安全边界密切相关。</p>
+<p>从移动终端安全研究的角度来看，理解 Android 系统架构有助于识别潜在攻击面、分析漏洞成因，并制定有针对性的安全防护策略。</p>
+<h2 id="sec-1">一、Android 系统整体架构</h2>
+<p>Android 系统通常可以划分为以下几个主要层次。</p>
+<table><thead><tr><th>层次（自上而下）</th><th>关键组成</th></tr></thead><tbody><tr><td>应用层（Applications）</td><td>系统应用、第三方应用、浏览器、移动支付应用</td></tr><tr><td>应用接口与权限控制 / 应用框架层（Application Framework）</td><td>Activity Manager、Package Manager、系统服务、Binder IPC</td></tr><tr><td>系统服务、运行时与本地接口 / Android Runtime 与原生组件</td><td>ART、原生库、媒体组件、图形组件、加密库</td></tr><tr><td>HAL 与系统调用 / 硬件抽象层（HAL）与 Linux 内核</td><td>硬件驱动、进程管理、内存管理、SELinux、设备访问控制</td></tr></tbody></table>
+<blockquote><p>简化示意图：实际 Android 架构包含多个交叉调用路径，并非所有组件都严格按照单一方向通信。</p></blockquote>
+<h3 id="sec-1-1">1.1 应用层</h3>
+<p>应用层包括预装系统应用和用户安装的第三方应用，是用户直接接触的主要部分。</p>
+<p>应用通常运行在独立的 Linux UID 和应用沙箱中，并通过 Android 权限机制访问受保护的资源。</p>
+<p><strong>主要攻击面</strong>：</p>
+<ul>
+<li>应用组件暴露不当，例如 Activity、Service、Broadcast Receiver 和 Content Provider。</li>
+<li>Intent 或深层链接参数验证不充分。</li>
+<li>敏感数据存储、日志记录或网络通信不安全。</li>
+<li>WebView 配置错误或第三方依赖存在漏洞。</li>
+</ul>
+<p><strong>安全风险</strong>：未授权访问应用功能、敏感信息泄露、账户凭证暴露以及应用间数据访问问题。</p>
+<h3 id="sec-1-2">1.2 应用框架层</h3>
+<p>应用框架为应用提供系统 API，并通过系统服务管理应用生命周期、权限、通知、位置和设备资源。</p>
+<p>其中，Binder 是 Android 重要的进程间通信（IPC）机制，许多应用与系统服务之间的请求通过 Binder 完成。</p>
+<p><strong>主要攻击面</strong>：</p>
+<ul>
+<li>系统服务接口的调用方身份验证。</li>
+<li>权限检查逻辑和授权状态判断。</li>
+<li>Binder 接口参数解析与异常处理。</li>
+<li>系统服务之间的信任关系及调用链。</li>
+</ul>
+<p><strong>安全风险</strong>：如果系统服务错误地信任调用者，或者未能在敏感操作前正确执行权限检查，可能造成越权访问或权限边界被突破。</p>
+<h3 id="sec-1-3">1.3 Android Runtime 与原生组件</h3>
+<p>Android Runtime（ART）负责执行 Android 应用的运行时代码。原生组件则提供媒体处理、图形渲染、加密及其他底层功能。</p>
+<p>这些组件可能使用 Java、Kotlin、C 或 C++ 等语言实现，其安全特征存在差异。</p>
+<p><strong>主要攻击面</strong>：</p>
+<ul>
+<li>媒体文件、图像和其他复杂格式的解析器。</li>
+<li>原生库中的内存管理与边界检查。</li>
+<li>运行时组件和本地接口之间的数据交换。</li>
+<li>第三方原生依赖库及其版本管理。</li>
+</ul>
+<p><strong>安全风险</strong>：内存破坏、进程崩溃、信息泄露，以及特定条件下的代码执行。</p>
+<h3 id="sec-1-4">1.4 硬件抽象层（HAL）</h3>
+<p>HAL 为 Android 系统框架提供统一的硬件访问接口，降低上层软件与具体硬件实现之间的耦合。</p>
+<p>例如，相机、音频、传感器和其他硬件功能都可能涉及相应的 HAL 实现。</p>
+<p><strong>主要攻击面</strong>：</p>
+<ul>
+<li>HAL 接口的输入验证。</li>
+<li>硬件服务的权限与调用方检查。</li>
+<li>厂商定制组件中的内存管理问题。</li>
+<li>HAL 与内核驱动之间的数据交互。</li>
+</ul>
+<p><strong>安全风险</strong>：特定硬件功能受到未授权访问、服务异常，或在满足特定条件时发生权限边界问题。</p>
+<h3 id="sec-1-5">1.5 Linux 内核层</h3>
+<p>Linux 内核是 Android 的基础，负责进程调度、内存管理、设备驱动、网络协议栈和底层安全控制。</p>
+<p>内核通常处于系统高权限区域，因此其安全缺陷可能产生较大影响。</p>
+<p><strong>主要攻击面</strong>：</p>
+<ul>
+<li>内核系统调用接口。</li>
+<li>设备驱动及其输入处理逻辑。</li>
+<li>内存管理与并发操作。</li>
+<li>网络协议栈和其他内核子系统。</li>
+<li>SELinux 等安全机制的策略配置与执行。</li>
+</ul>
+<p><strong>安全风险</strong>：内核崩溃、信息泄露、权限提升，以及特定条件下突破应用隔离。</p>
+<p>需要注意，内核漏洞并不必然导致完整设备控制；实际影响取决于漏洞类型、可利用条件和其他安全防护措施。</p>
+<h2 id="sec-2">二、Android 系统主要攻击面分析</h2>
+<p>攻击面是指系统中可能被外部输入、用户操作、应用请求或其他交互路径触达，并可能影响系统安全的接口、组件和功能。</p>
+<p>从安全审计角度，可以将 Android 的主要攻击面归纳为以下几类。</p>
+<p><strong>1. 应用组件与权限接口</strong></p>
+<p>关注对象：Activity、Service、Broadcast Receiver、Content Provider。</p>
+<p>审计重点是组件是否不必要地对外暴露、调用方是否经过验证，以及敏感操作是否执行了正确的权限检查。</p>
+<p><strong>2. 系统服务与 IPC 接口</strong></p>
+<p>关注对象：Binder、系统服务、跨进程请求。</p>
+<p>重点检查身份验证、参数校验、权限执行时机，以及服务是否正确处理不可信调用方提交的数据。</p>
+<p><strong>3. 内核与硬件驱动接口</strong></p>
+<p>关注对象：系统调用、设备驱动、内核子系统。</p>
+<p>重点关注输入边界、内存安全、资源生命周期和并发访问问题，并确认驱动仅向适当的主体开放必要功能。</p>
+<p><strong>4. 文件与媒体解析组件</strong></p>
+<p>关注对象：图片、视频、字体、文档和其他复杂输入格式。</p>
+<p>复杂格式解析涉及大量边界条件。重点关注异常输入处理、内存安全、资源限制和解析器依赖版本。</p>
+<p><strong>5. 系统更新与软件供应链</strong></p>
+<p>关注对象：OTA 更新、系统镜像、厂商组件、第三方库。</p>
+<p>重点检查更新包的完整性验证、签名校验、版本管理、依赖项风险和设备补丁覆盖情况。</p>
+<h2 id="sec-3">三、Android 中典型的安全边界</h2>
+<p>Android 的安全设计不是依赖某一个防护机制，而是通过多个安全边界共同限制攻击者的能力。</p>
+<table><thead><tr><th>安全机制</th><th>主要作用</th><th>相关风险</th></tr></thead><tbody><tr><td>应用沙箱</td><td>限制应用之间的资源访问</td><td>沙箱逃逸、隔离缺陷</td></tr><tr><td>Android 权限系统</td><td>管理应用对受保护资源的访问</td><td>权限检查遗漏、授权过度</td></tr><tr><td>Binder 调用方验证</td><td>识别 IPC 请求的调用主体</td><td>身份判断错误、越权调用</td></tr><tr><td>SELinux</td><td>实施强制访问控制</td><td>策略配置过宽、策略执行问题</td></tr><tr><td>Verified Boot</td><td>验证启动链与系统完整性</td><td>启动链验证或密钥管理问题</td></tr><tr><td>安全更新机制</td><td>修复已知漏洞</td><td>补丁延迟、设备停止维护</td></tr></tbody></table>
+<p>这些机制的作用并不相同。例如，应用权限授权不能替代系统服务对调用者的验证；Verified Boot 也不能保证系统中不存在软件漏洞。</p>
+<h2 id="sec-4">四、Android 攻击面与漏洞类型之间的关系</h2>
+<p>同一个攻击面可能对应多种漏洞类型，而同一种漏洞也可能出现在不同层次。</p>
+<ul>
+<li>应用层：权限配置错误、信息泄露、输入验证缺陷。</li>
+<li>系统服务与 IPC 层：权限提升、边界绕过、信息泄露。</li>
+<li>原生组件与 HAL 层：内存安全漏洞、拒绝服务、代码执行。</li>
+<li>Linux 内核层：内存破坏、权限提升、内核信息泄露。</li>
+</ul>
+<p>以上是常见关联示例，并非严格的一一对应关系。</p>
+<p>例如，某个媒体解析组件的内存安全缺陷可能首先影响运行该组件的进程。如果该进程受到沙箱限制，攻击者的能力也会受到限制。进一步扩大影响通常需要额外的漏洞或安全边界缺陷，但具体情况应以漏洞分析结果为准。</p>
+<p>因此，在漏洞研究中，应分别分析漏洞入口、受影响组件、运行权限、隔离边界和最终安全影响，而不是仅根据漏洞名称判断风险。</p>
+<h2 id="sec-5">五、Android 系统攻击面评估方法</h2>
+<p>开展系统安全评估时，可以采用以下流程。</p>
+<ol>
+<li><strong>确定评估范围。</strong> 记录设备型号、Android 版本、安全补丁级别、芯片平台及厂商定制组件。</li>
+<li><strong>梳理外部接口。</strong> 检查应用组件、系统服务、IPC 接口、硬件访问路径和外部输入处理模块。</li>
+<li><strong>识别信任边界。</strong> 明确哪些组件处理不可信输入、哪些进程具有高权限，以及哪些操作需要额外授权。</li>
+<li><strong>检查已知漏洞。</strong> 对照 Android 官方安全公告、厂商公告及 CVE 数据库，确认漏洞是否涉及目标设备与版本。</li>
+<li><strong>开展授权测试。</strong> 在测试设备或隔离环境中使用静态分析、动态分析、模糊测试和代码审计验证风险。</li>
+<li><strong>制定修复优先级。</strong> 综合考虑漏洞严重程度、可达性、潜在影响、补丁状态和业务重要性。</li>
+</ol>
+<h2 id="sec-6">六、总结</h2>
+<p>Android 系统架构包含应用层、应用框架层、运行时与原生组件、硬件抽象层以及 Linux 内核等多个部分。各层之间通过 API、Binder、系统调用和硬件接口进行交互，这些交互路径构成了系统主要攻击面。</p>
+<p>Android 安全分析的核心，是理解不同组件的职责与信任关系，识别输入验证和权限控制中的薄弱环节，并评估漏洞可能跨越的安全边界。</p>
+<p>实际防护应结合最小权限原则、应用沙箱、SELinux、系统完整性保护和及时的安全更新，形成多层防御体系。</p>
+<hr>
+<h2 id="sec-7">联系方式</h2>
+<p>咨询 iOS、安卓系统安全相关问题，请联系 Telegram：<a href="https://t">https://t</a>.me/one00190</p>
+</article>
+</main>
+<footer class="site">本站为技术研究与防护实践笔记，全部方法仅用于自有或已获授权的设备与环境。咨询 iOS、安卓系统安全相关问题，请联系 Telegram：<a href="https://t.me/one00190">https://t.me/one00190</a></footer>
+</body>
+</html>

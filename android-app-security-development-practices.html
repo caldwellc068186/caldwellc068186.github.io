@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Android 应用层安全开发实践：组件导出、跨进程调用与 WebView 加固清单 · 安卓漏洞与安全防护研究</title>
+<meta name="description" content="Android 应用层安全开发实践：组件导出、跨进程调用与 WebView 加固清单 —— 技术研究报告 · 面向移动应用工程的加固清单与发布前检查">
+<link rel="canonical" href="https://caldwellc068186.github.io/android-app-security-development-practices.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="安卓漏洞与安全防护研究">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="Android 应用层安全开发实践：组件导出、跨进程调用与 WebView 加固清单">
+<meta property="og:description" content="Android 应用层安全开发实践：组件导出、跨进程调用与 WebView 加固清单 —— 技术研究报告 · 面向移动应用工程的加固清单与发布前检查">
+<meta property="og:url" content="https://caldwellc068186.github.io/android-app-security-development-practices.html">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://caldwellc068186.github.io/android-app-security-development-practices.html"},"headline":"Android 应用层安全开发实践：组件导出、跨进程调用与 WebView 加固清单","description":"Android 应用层安全开发实践：组件导出、跨进程调用与 WebView 加固清单 —— 技术研究报告 · 面向移动应用工程的加固清单与发布前检查","inLanguage":"zh-CN","datePublished":"2026-10-26","dateModified":"2026-10-25","url":"https://caldwellc068186.github.io/android-app-security-development-practices.html","publisher":{"@type":"Organization","name":"安卓漏洞与安全防护研究","url":"https://caldwellc068186.github.io/"},"isPartOf":{"@type":"WebSite","name":"安卓漏洞与安全防护研究","url":"https://caldwellc068186.github.io/"}}
+</script>
+<style>
+:root{--fg:#1b1f24;--mut:#57606a;--line:#d8dee4;--bg:#fff;--acc:#0a66c2;--code:#f6f8fa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif}
+header.site{border-bottom:1px solid var(--line);padding:14px 20px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+header.site .brand{font-weight:700;color:var(--fg);text-decoration:none;font-size:17px}
+header.site .tag{color:var(--mut);font-size:13px}
+main{max-width:46rem;margin:0 auto;padding:28px 20px 56px}
+h1{font-size:1.85rem;line-height:1.35;margin:.2em 0 .3em}
+h2{font-size:1.32rem;margin:2.1em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.7em 0 .5em}
+h4{font-size:1rem;margin:1.4em 0 .4em}
+.subtitle{color:var(--mut);font-size:1.02rem;margin:0 0 1.2em}
+p{margin:.9em 0}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+code{background:var(--code);padding:.15em .35em;border-radius:4px;font:.87em/1.6 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+blockquote{margin:1em 0;padding:.4em 1em;border-left:4px solid var(--line);color:var(--mut);background:#fafbfc}
+hr{border:0;border-top:1px solid var(--line);margin:2.2em 0}
+ul,ol{padding-left:1.5em}li{margin:.4em 0}
+table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#fbfcfd}
+nav.toc{border:1px solid var(--line);border-radius:8px;padding:12px 18px;margin:1.4em 0;background:#fbfcfd}
+nav.toc p{font-weight:600;margin:0 0 .4em}
+nav.toc ul{margin:0;padding-left:1.1em;list-style:none}
+nav.toc li.t{font-weight:600;margin:.5em 0 .2em}
+nav.toc li.s{margin:.2em 0 .2em .8em}
+footer.site{border-top:1px solid var(--line);padding:20px;color:var(--mut);font-size:14px;max-width:49rem;margin:0 auto}
+ul.artlist{list-style:none;padding:0}ul.artlist li{margin:0 0 1.6em}
+ul.artlist .t{font-size:1.08rem;font-weight:600;display:block}
+ul.artlist .s{color:var(--mut);font-size:.94rem;display:block;margin-top:.15em}
+@media(max-width:600px){main{padding:20px 14px 44px}h1{font-size:1.5rem}table{font-size:.86em}}
+</style>
+<!-- GOOGLE-SITE-VERIFICATION: 把 GSC 给的 <meta name="google-site-verification" ...> 插到这一行下面 -->
+</head>
+<body>
+<header class="site"><a class="brand" href="./">安卓漏洞与安全防护研究</a><span class="tag">Android 安全研究笔记</span></header>
+<main>
+<article>
+<h1>Android 应用层安全开发实践：组件导出、跨进程调用与 WebView 加固清单</h1>
+<p class="subtitle">技术研究报告 · 面向移动应用工程的加固清单与发布前检查</p>
+<nav class="toc" aria-label="目录"><p>目录</p><ul><li class="t"><a href="#sec-1">摘要</a></li><li class="t"><a href="#sec-2">一、为什么攻击面由应用自身决定</a></li><li class="t"><a href="#sec-3">二、组件导出与隐式调用的校验清单</a></li><li class="s"><a href="#sec-3-1">2.1 导出声明的审查</a></li><li class="s"><a href="#sec-3-2">2.2 隐式 Intent 的发送风险</a></li><li class="s"><a href="#sec-3-3">2.3 接收端的输入校验</a></li><li class="s"><a href="#sec-3-4">2.4 FileProvider 与临时授权</a></li><li class="t"><a href="#sec-4">三、跨进程调用与待处理意图的常见误用</a></li><li class="s"><a href="#sec-4-1">3.1 PendingIntent 的委托语义</a></li><li class="s"><a href="#sec-4-2">3.2 可变性与显式目标</a></li><li class="s"><a href="#sec-4-3">3.3 回调结果的来源校验</a></li><li class="t"><a href="#sec-5">四、内置浏览器组件与混合内容的加固</a></li><li class="s"><a href="#sec-5-1">4.1 JavaScript 桥接</a></li><li class="s"><a href="#sec-5-2">4.2 本地文件访问</a></li><li class="s"><a href="#sec-5-3">4.3 混合内容与 SSL 错误</a></li><li class="s"><a href="#sec-5-4">4.4 其他配置项</a></li><li class="t"><a href="#sec-6">五、存储、日志与网络传输</a></li><li class="s"><a href="#sec-6-1">5.1 存储</a></li><li class="s"><a href="#sec-6-2">5.2 日志</a></li><li class="s"><a href="#sec-6-3">5.3 网络传输</a></li><li class="t"><a href="#sec-7">六、发布前的自动化检查</a></li><li class="s"><a href="#sec-7-1">6.1 构建配置核查清单</a></li><li class="s"><a href="#sec-7-2">6.2 静态扫描</a></li><li class="s"><a href="#sec-7-3">6.3 依赖与第三方 SDK</a></li><li class="t"><a href="#sec-8">七、常见反模式与纠正对照表</a></li><li class="t"><a href="#sec-9">八、结语</a></li><li class="t"><a href="#sec-10">联系方式</a></li></ul></nav>
+<h2 id="sec-1">摘要</h2>
+<p>系统漏洞由平台修复，但应用层攻击面由开发者自己的声明与代码决定：导出哪些组件、如何处理跨进程调用、内置浏览器开放哪些能力、敏感数据落在哪个目录、日志与调试标志是否随发布包上线。本文以工程视角逐项拆解这些决策点，覆盖组件导出与隐式调用的校验、待处理意图的常见误用、WebView 与混合内容的加固、存储与日志与网络三条数据通路、发布前的自动化检查，并用对照表汇总常见反模式与纠正做法，给出一份可直接嵌入迭代流程的检查清单。</p>
+<p><strong>关键词</strong>：组件导出；PendingIntent；WebView 加固；混合内容；网络安全配置；静态扫描；发布检查</p>
+<h2 id="sec-2">一、为什么攻击面由应用自身决定</h2>
+<p>Android 为每个应用分配独立的 Linux 用户与 SELinux 上下文，进程之间默认无法读写彼此的内存与文件。在这个边界之内，应用的行为几乎完全由自己控制：清单文件决定哪些组件对外可见，Intent 处理逻辑决定收到外部调用后做什么，WebView 设置决定页面脚本能触达哪些本地能力，构建配置决定发布包是否残留调试后门。</p>
+<p>关键在于平台机制只提供&quot;能力&quot;而非&quot;策略&quot;。<code>android:exported</code> 本身不区分安全与否，问题在于导出的组件是否做了输入校验；<code>PendingIntent</code> 本身不危险，危险的是创建时没约束可变性与接收方；<code>addJavascriptInterface</code> 桥接的是宿主应用的全部权限，暴露范围由开发者选择。同一个 API 在不同策略下会产生完全相反的安全后果。</p>
+<p>这决定了应用安全审计与系统漏洞研究的工作顺序不同：不需要找内存越界，而是检查声明——谁在什么时候调用了什么能力、调用方是谁、输入经过了什么校验。这些检查可以标准化、可以自动化，因此没有借口遗漏。</p>
+<h2 id="sec-3">二、组件导出与隐式调用的校验清单</h2>
+<h3 id="sec-3-1">2.1 导出声明的审查</h3>
+<p>四大组件通过 <code>android:exported</code> 决定是否接受跨进程调用。较新版本平台要求：凡包含 <code>intent-filter</code> 的组件必须显式声明该属性，不再允许隐式推断。审查动作：</p>
+<ul>
+<li>遍历清单，列出所有 <code>exported="true"</code> 的组件。</li>
+<li>对每个导出组件回答三个问题：是否确实需要被外部调用？调用方是否可预期？任意应用都能调用时最坏后果是什么？</li>
+<li>内部页面（设置、管理面板）若误标导出，攻击者可绕过导航流程直接触发敏感操作。</li>
+<li><code>ContentProvider</code> 的 <code>authority</code> 若与包名不一致或过于通用，易被同名声明抢占或探测。</li>
+<li>无 <code>intent-filter</code> 却 <code>exported="true"</code> 的组件属于手动导出，需额外确认权限约束。</li>
+</ul>
+<h3 id="sec-3-2">2.2 隐式 Intent 的发送风险</h3>
+<p>通过 <code>startActivity</code>、<code>startService</code>、<code>sendBroadcast</code> 发送隐式 Intent（未指定目标包名或类名）时，任何声明了匹配 <code>intent-filter</code> 的应用都可截获。若 extras 携带令牌、用户标识或业务参数，恶意应用只要注册相同的 action 与 category 即可拿到数据。纠正方式：构造 Intent 后显式调用 <code>setPackage()</code> 或 <code>setComponent()</code> 锁定目标；广播用同包限定，服务用显式组件名。</p>
+<h3 id="sec-3-3">2.3 接收端的输入校验</h3>
+<p>导出组件必须把每一次外部调用视为不可信输入：</p>
+<table><thead><tr><th>检查项</th><th>要求</th></tr></thead><tbody><tr><td>Action/Category 白名单</td><td>只处理预期值，其余忽略或返回错误</td></tr><tr><td>Extras 类型与边界</td><td>取用前检查键是否存在；数值做范围校验，字符串做长度与格式校验</td></tr><tr><td>URI 权限范围</td><td>收到的 <code>content://</code> URI 只授予本次操作所需的最小读写权限</td></tr><tr><td>回调结果可控性</td><td>对返回数据做完整性校验，不假设结果一定来自预期界面</td></tr><tr><td>权限前置检查</td><td>鉴权放在组件入口而非 UI 层，防止绕过界面直接调用</td></tr></tbody></table>
+<h3 id="sec-3-4">2.4 FileProvider 与临时授权</h3>
+<p><code>FileProvider</code> 共享文件时清单需 <code>grantUriPermissions="true"</code>。<code>FLAG_GRANT_READ_URI_PERMISSION</code> 与 <code>WRITE</code> 授予的是临时访问权，接收方在有效期内可读该 URI 指向的文件。敏感文件应显式指定接收方包名，或在操作完成后用 <code>revokeUriPermission</code> 回收。</p>
+<h2 id="sec-4">三、跨进程调用与待处理意图的常见误用</h2>
+<h3 id="sec-4-1">3.1 PendingIntent 的委托语义</h3>
+<p><code>PendingIntent</code> 的机制是&quot;把调用权限委托给接收方&quot;：创建者以自身身份封装一个 Intent，接收方触发时使用创建者的权限执行它。委托模型带来两类风险——权限放大（低权限接收方借高权限创建者发起操作）与内容劫持（接收方修改内部 Intent 的参数或目标）。</p>
+<h3 id="sec-4-2">3.2 可变性与显式目标</h3>
+<p>较新版本平台要求创建时显式指定 <code>FLAG_IMMUTABLE</code>（接收方不得修改内部 Intent）或 <code>FLAG_MUTABLE</code>（允许改 extras，适用于通知快捷回复等系统直接回复场景）。缺失标志在新平台会抛异常，但历史代码若仍运行在旧设备上，接收方可篡改目标组件、action 或 extras，把操作重定向到恶意组件。检查动作：</p>
+<ul>
+<li>所有 PendingIntent 路径必须带 <code>FLAG_IMMUTABLE</code>，除非确有 <code>RemoteInput</code> 类需求。</li>
+<li>发给外部应用的 PendingIntent，其内部 Intent 必须用 <code>setComponent</code>/<code>setClass</code> 锁定，不能依赖隐式解析。</li>
+<li><code>requestCode</code> 在应用内保持唯一，避免不同功能的 PendingIntent 互相覆盖。</li>
+</ul>
+<h3 id="sec-4-3">3.3 回调结果的来源校验</h3>
+<p><code>onActivityResult</code>（或较新的 <code>ActivityResultLauncher</code> 回调）接收外部数据时，仅凭 <code>resultCode == RESULT_OK</code> 不能确认来源——恶意 Activity 可返回 <code>RESULT_OK</code> 加伪造数据。需要校验：返回 extras 附带的来源包名或签名、数据格式与范围、业务状态一致性。</p>
+<h2 id="sec-5">四、内置浏览器组件与混合内容的加固</h2>
+<p>WebView 把 JavaScript 引擎、本地文件系统与宿主 API 汇聚在同一进程，配置项任何一个不当开关都可能成为逃逸路径。</p>
+<h3 id="sec-5-1">4.1 JavaScript 桥接</h3>
+<p><code>addJavascriptInterface</code> 把 Java 对象方法暴露给页面脚本。较新版本要求被桥接方法标注 <code>@JavascriptInterface</code> 才可调用，但注解不改变权限模型——脚本仍通过桥接对象持有宿主全部运行时能力。控制策略：</p>
+<ul>
+<li>只向受信任页面暴露桥接；在 <code>shouldInterceptRequest</code> 或加载回调里校验 URL 域名白名单，不匹配则移除桥接或阻止加载。</li>
+<li>桥接对象最小化：只暴露当前页面确需的方法，方法内部自行做参数与权限校验，不假设&quot;只有我的页面会调它&quot;。</li>
+<li>第三方内容（广告、嵌入页）不得持有 JavaScript 桥接。</li>
+</ul>
+<h3 id="sec-5-2">4.2 本地文件访问</h3>
+<p>四个开关的默认值随平台版本变化，但不应依赖默认值。<code>setAllowUniversalAccessFromFileURLs</code> 为 true 时，经 <code>file://</code> 加载的页面可跨域读取任意本地文件，是最危险的单一配置。发布前对每一项显式调用：<code>setAllowFileAccess(false)</code>、<code>setAllowContentAccess(false)</code>、<code>setAllowFileAccessFromFileURLs(false)</code>、<code>setAllowUniversalAccessFromFileURLs(false)</code>。确需加载本地资源时，用 <code>WebViewAssetLoader</code> 映射到 <code>https://</code> 虚拟域名，避免 <code>file://</code> 路径。</p>
+<h3 id="sec-5-3">4.3 混合内容与 SSL 错误</h3>
+<p><code>setMixedContentMode</code> 在较新版本默认拒绝混合内容（HTTPS 页面加载 HTTP 子资源），仍应显式设为 <code>MIXED_CONTENT_NEVER_ALLOW</code>。<code>onReceivedSslError</code> 回调中不得调用 <code>handler.proceed()</code>——那会跳过证书校验，使中间人直接替换页面内容；正确做法是 <code>handler.cancel()</code> 并向用户展示警告。</p>
+<h3 id="sec-5-4">4.4 其他配置项</h3>
+<p>按需显式关闭 <code>setSaveFormData</code>；仅对确需动态内容的页面开启 <code>setJavaScriptEnabled</code>；检查 <code>CookieManager.setAcceptThirdPartyCookies</code> 是否被过宽放开；在 <code>setDownloadListener</code> 中限制可下载的 MIME 与存储路径。</p>
+<h2 id="sec-6">五、存储、日志与网络传输</h2>
+<h3 id="sec-6-1">5.1 存储</h3>
+<p>应用私有目录（<code>getFilesDir()</code>、<code>SharedPreferences</code>、专属 SQLite）受沙箱保护——前提是设备处于官方支持期且未 root。风险不在&quot;别人能不能读到&quot;，而在&quot;数据是否因自身行为外溢&quot;：把敏感数据写进外部存储或公共媒体目录，等于放弃沙箱保护；<code>SharedPreferences</code> 明文存令牌的问题不能靠&quot;给文件加一层对称加密&quot;解决——官方 Jetpack 加密组件已进入弃用状态，历史代码需要迁移，正确做法是把凭据交给平台密钥接口保护、或干脆不落地；<code>android:allowBackup="true"</code> 会把数据纳入云备份与设备迁移，敏感数据需在提取与传输规则中排除，多数场景直接设 false 更简单；剪贴板残留验证码或密钥片段，使用后应清除。</p>
+<h3 id="sec-6-2">5.2 日志</h3>
+<p><code>Log.d</code>、<code>Log.v</code> 若随发布包上线，调试连接下可通过 <code>logcat</code> 读取。处理：在 R8/ProGuard 规则中用 <code>-assumenosideeffects</code> 声明 <code>android.util.Log</code> 无副作用，使优化阶段删除调用；或封装日志工具类、用 <code>BuildConfig.DEBUG</code> 门控。同时审查第三方 SDK 是否在生产环境仍打印请求体与令牌片段。</p>
+<h3 id="sec-6-3">5.3 网络传输</h3>
+<p><code>android:usesCleartextTraffic</code> 在较新版本默认 false，但需逐项确认安全配置文件（<code>network_security_config.xml</code>）已引用且内容正确。域名级的 <code>cleartextTrafficPermitted="true"</code> 只应针对确实需要 HTTP 的本地或内网地址，不应全局放开。证书固定（在 <code>trust-anchors</code> 下声明证书摘要）可抵御合法 CA 签发的欺骗证书，但必须有到期轮换机制，否则固定会阻断服务。注意 WebView 的 SSL 错误处理独立于安全配置文件，两处都要检查。</p>
+<h2 id="sec-7">六、发布前的自动化检查</h2>
+<h3 id="sec-7-1">6.1 构建配置核查清单</h3>
+<p>以下动作纳入 CI 或每次发布前逐项核对：</p>
+<ol>
+<li><code>debuggable</code> 为 <code>false</code>——调试标志开启时，任何持有 USB 调试权限的人都可通过 JDWP 附加进程并执行任意代码。</li>
+<li><code>minifyEnabled true</code> 与 <code>shrinkResources true</code>：开启混淆与资源压缩，审查 R8 配置中是否滥用 <code>-dontobfuscate</code>、<code>-dontoptimize</code>。</li>
+<li>发布包使用与调试完全不同的签名密钥，密钥材料不在构建服务器明文存放。</li>
+<li><code>targetSdkVersion</code> 跟随平台推荐版本——较新目标版本会自动启用更严的默认行为（导出显式声明、PendingIntent 可变性要求、剪贴板读取限制等）。</li>
+<li>用清单合并报告比对最终清单与预期声明——依赖库可能引入额外的 <code>exported</code> 组件、权限或 <code>intent-filter</code>。</li>
+</ol>
+<h3 id="sec-7-2">6.2 静态扫描</h3>
+<p>Android Lint 内置多条安全规则，在 Gradle 中设 <code>checkReleaseBuilds true</code> 与 <code>abortOnError true</code> 让严重项阻断构建。重点类别：组件导出、<code>FileUriExposure</code>、<code>WebViewJavaScriptEnabled</code>、<code>JavaScriptInterface</code>、<code>TrustAllX509TrustManager</code>、<code>BadHostnameVerifier</code>、<code>SdCardPath</code>。逻辑层面的校验完整性（如导出组件是否真的校验了输入）仍需人工审查；第三方 SAST 可补充，但误报要纳入工单而非邮件附件，否则无人修复。</p>
+<h3 id="sec-7-3">6.3 依赖与第三方 SDK</h3>
+<p>每个第三方库都是间接攻击面：只引入经过评估的库，移除不再使用的依赖；优先官方或维护活跃的包，不从未验证镜像引入；审查权限合并——图片库带 <code>INTERNET</code> 可接受，若同时请求 <code>READ_CONTACTS</code> 需确认是否真被运行时使用；用版本目录锁定依赖并建立定期更新流程，不更新等于不修复。</p>
+<h2 id="sec-8">七、常见反模式与纠正对照表</h2>
+<table><thead><tr><th>反模式</th><th>风险后果</th><th>纠正做法</th></tr></thead><tbody><tr><td>内部 Activity 标 <code>exported="true"</code></td><td>外部应用绕过导航直接调用，跳过鉴权</td><td>内部组件一律 <code>exported="false"</code>；确需导出时在入口校验调用方</td></tr><tr><td>隐式 Intent 携带令牌 extras</td><td>匹配 filter 的任意应用可截获</td><td>用 <code>setPackage</code>/<code>setComponent</code> 锁定接收方</td></tr><tr><td>PendingIntent 未指定可变标志</td><td>旧设备上接收方可篡改并重定向内部 Intent</td><td>显式 <code>FLAG_IMMUTABLE</code>，内部 Intent 用显式组件名</td></tr><tr><td>开启 <code>allowUniversalAccessFromFileURLs</code></td><td><code>file://</code> 页面跨域读取私有目录任意文件</td><td>显式设 false，改用 <code>WebViewAssetLoader</code></td></tr><tr><td><code>addJavascriptInterface</code> 暴露整个 ViewModel</td><td>脚本可调用全部公开方法，含敏感操作</td><td>最小化桥接，每个方法做参数与权限校验</td></tr><tr><td><code>onReceivedSslError</code> 调 <code>handler.proceed()</code></td><td>中间人替换页面、窃取表单</td><td>调 <code>cancel()</code> 并展示警告，绝不静默跳过</td></tr><tr><td><code>SharedPreferences</code> 明文存令牌</td><td>root 或备份提取后令牌直接可读</td><td>凭据改由平台密钥接口保护或不落地；把该文件排除出备份规则</td></tr><tr><td>发布包 <code>debuggable="true"</code></td><td>USB 调试者经 JDWP 在进程内执行任意代码</td><td>CI 校验构建标志，发布配置强制覆盖为 false</td></tr></tbody></table>
+<h2 id="sec-9">八、结语</h2>
+<p>应用层安全的特征决定了它的工作方式与系统漏洞研究不同：攻击面由声明和配置构成，风险由&quot;谁调用了什么、输入是否校验、权限委托到了哪里&quot;决定，而非内存布局或竞态窗口。这意味着大部分问题可以在代码审查与构建流水线里被发现——前提是有人把正确的检查项放进了流程。上面每一条都对应一个具体动作：遍历导出声明、锁定 PendingIntent 的可变性与目标、关闭 WebView 文件跨域、移除生产日志、核对签名与混淆配置。这些动作可以脚本化、可以在每次合并请求时自动执行。安全不是一次审计的结论，而是迭代流程里的持续步骤——把清单变成门禁，比把清单变成文档有用得多。</p>
+<hr>
+<h2 id="sec-10">联系方式</h2>
+<p>咨询 iOS、安卓系统安全相关问题，请联系 Telegram：<a href="https://t">https://t</a>.me/one00190</p>
+</article>
+</main>
+<footer class="site">本站为技术研究与防护实践笔记，全部方法仅用于自有或已获授权的设备与环境。咨询 iOS、安卓系统安全相关问题，请联系 Telegram：<a href="https://t.me/one00190">https://t.me/one00190</a></footer>
+</body>
+</html>
